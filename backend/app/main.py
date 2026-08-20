@@ -47,23 +47,29 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS Middleware with specific origins & regex support for Vercel/Render
-cors_origins = [str(origin) for origin in settings.BACKEND_CORS_ORIGINS if "*" not in str(origin)]
-if not cors_origins:
-    cors_origins = [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-    ]
+# CORS Middleware Configuration
+# Explicit origins, methods (GET, POST, PUT, PATCH, DELETE, OPTIONS), headers & credentials
+cors_origins = [str(origin).strip().rstrip("/") for origin in settings.BACKEND_CORS_ORIGINS if "*" not in str(origin)]
+baseline_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://vercel.com/jackys-projects-fa9f7bec/fraud-shield",
+    "https://vercel.com",
+    "https://fraud-shield-erem.onrender.com",
+]
+for origin in baseline_origins:
+    if origin not in cors_origins:
+        cors_origins.append(origin)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.onrender\.com",
+    allow_origin_regex=r"^https://.*\.vercel\.app$|^https://.*\.onrender\.com$|^https://vercel\.com(/.*)?$",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=600,
 )
 
 

@@ -152,3 +152,47 @@ def test_twilio_twiml_generation():
     assert "application/xml" in response.headers["content-type"]
     assert "<Stream" in response.text
     assert "Security notice:" in response.text
+
+
+def test_cors_development_origin():
+    response = client.get("/health", headers={"Origin": "http://localhost:5173"})
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
+    assert response.headers.get("access-control-allow-credentials") == "true"
+
+
+def test_cors_production_origin():
+    prod_origin = "https://vercel.com/jackys-projects-fa9f7bec/fraud-shield"
+    response = client.get("/health", headers={"Origin": prod_origin})
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == prod_origin
+    assert response.headers.get("access-control-allow-credentials") == "true"
+
+
+def test_cors_vercel_subdomain_origin():
+    preview_origin = "https://fraud-shield-test.vercel.app"
+    response = client.get("/health", headers={"Origin": preview_origin})
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == preview_origin
+    assert response.headers.get("access-control-allow-credentials") == "true"
+
+
+def test_cors_preflight_options():
+    prod_origin = "https://vercel.com/jackys-projects-fa9f7bec/fraud-shield"
+    response = client.options(
+        "/api/risk/transaction",
+        headers={
+            "Origin": prod_origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "authorization, content-type",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == prod_origin
+    assert response.headers.get("access-control-allow-credentials") == "true"
+    allow_methods = response.headers.get("access-control-allow-methods", "")
+    for method in ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]:
+        assert method in allow_methods
+    allow_headers = response.headers.get("access-control-allow-headers", "")
+    assert "authorization" in allow_headers.lower() or "content-type" in allow_headers.lower() or "*" in allow_headers
+

@@ -51,23 +51,34 @@ class Settings(BaseSettings):
     RISK_THRESHOLD_MEDIUM: int = 60
     RISK_THRESHOLD_HIGH: int = 80
 
-    # CORS
+    # CORS Origins
     BACKEND_CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",
-        "http://localhost:3000",
         "http://127.0.0.1:5173",
+        "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://*.vercel.app",
-        "https://*.onrender.com"
+        "https://vercel.com/jackys-projects-fa9f7bec/fraud-shield",
+        "https://vercel.com",
+        "https://fraud-shield.vercel.app",
+        "https://fraud-shield-erem.onrender.com",
     ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",") if i.strip()]
-        elif isinstance(v, (list, str)):
-            return v
+        if isinstance(v, str):
+            v_trimmed = v.strip()
+            if v_trimmed.startswith("[") and v_trimmed.endswith("]"):
+                try:
+                    import json
+                    parsed = json.loads(v_trimmed)
+                    if isinstance(parsed, list):
+                        return [str(i).strip().rstrip("/") for i in parsed if str(i).strip()]
+                except Exception:
+                    pass
+            return [i.strip().rstrip("/") for i in v.split(",") if i.strip()]
+        elif isinstance(v, (list, tuple, set)):
+            return [str(i).strip().rstrip("/") for i in v if str(i).strip()]
         return []
 
 

@@ -11,9 +11,24 @@ import {
   AuditLogItem
 } from '../types';
 
-// Use VITE_API_URL if configured, otherwise default to local relative '/api' for Vite proxy
-const rawApiUrl = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
-const API_BASE = rawApiUrl ? `${rawApiUrl}/api` : '/api';
+// Determine backend API base URL
+// Priority:
+// 1. Explicit import.meta.env.VITE_API_URL (e.g. 'https://fraud-shield-erem.onrender.com')
+// 2. Production fallback: 'https://fraud-shield-erem.onrender.com/api' (ensures Vercel deployment never calls localhost)
+// 3. Development fallback: '/api' (proxied by Vite to local dev server)
+const getApiBaseUrl = (): string => {
+  const envApiUrl = import.meta.env.VITE_API_URL;
+  if (envApiUrl && envApiUrl.trim()) {
+    const sanitized = envApiUrl.trim().replace(/\/+$/, '');
+    return sanitized.endsWith('/api') ? sanitized : `${sanitized}/api`;
+  }
+  if (import.meta.env.PROD) {
+    return 'https://fraud-shield-erem.onrender.com/api';
+  }
+  return '/api';
+};
+
+export const API_BASE = getApiBaseUrl();
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

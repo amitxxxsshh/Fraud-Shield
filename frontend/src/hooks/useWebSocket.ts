@@ -12,12 +12,18 @@ export function useWebSocket(onEventReceived?: (event: LiveRiskEvent) => void) {
   const connect = useCallback(() => {
     try {
       let wsUrl = '';
-      if (import.meta.env.VITE_WS_URL) {
-        wsUrl = import.meta.env.VITE_WS_URL;
-      } else if (import.meta.env.VITE_API_URL) {
-        const rawApi = import.meta.env.VITE_API_URL.replace(/\/+$/, '');
-        const wsBase = rawApi.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
-        wsUrl = `${wsBase}/ws/risk-events`;
+      const envWsUrl = import.meta.env.VITE_WS_URL;
+      const envApiUrl = import.meta.env.VITE_API_URL;
+
+      if (envWsUrl && envWsUrl.trim()) {
+        const sanitized = envWsUrl.trim().replace(/\/+$/, '');
+        wsUrl = sanitized.endsWith('/ws/risk-events') ? sanitized : `${sanitized}/ws/risk-events`;
+      } else if (envApiUrl && envApiUrl.trim()) {
+        const sanitized = envApiUrl.trim().replace(/\/+$/, '');
+        const wsBase = sanitized.replace(/^http:/i, 'ws:').replace(/^https:/i, 'wss:');
+        wsUrl = wsBase.endsWith('/ws/risk-events') ? wsBase : `${wsBase}/ws/risk-events`;
+      } else if (import.meta.env.PROD) {
+        wsUrl = 'wss://fraud-shield-erem.onrender.com/ws/risk-events';
       } else {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.host;
