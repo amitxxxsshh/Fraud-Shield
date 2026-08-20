@@ -1,0 +1,97 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fraud-shield-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fraud_user
+      POSTGRES_PASSWORD: fraud_password
+      POSTGRES_DB: fraud_shield_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fraud_user -d fraud_shield_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fraud_shield_net
+
+  backend:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.backend
+    container_name: fraud-shield-backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://fraud_user:fraud_password@postgres:5432/fraud_shield_db
+      - SECRET_KEY=prod-secret-key-fraud-shield-2026
+      - JWT_SECRET=prod-jwt-secret-fraud-shield-2026
+      - PRIVACY_HASH_SALT=prod-salt-token-mask-2026
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER:-}
+      - TWILIO_WEBHOOK_BASE_URL=${TWILIO_WEBHOOK_BASE_URL:-http://localhost:8000}
+      - MODEL_PATH=ml/models/xgboost_fraud_model.joblib
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fraud_shield_net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.frontend
+    container_name: fraud-shield-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - fraud_shield_net
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: fraud-shield-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - fraud_shield_net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: fraud-shield-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./infra/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./infra/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./infra/grafana/dashboards:/etc/grafana/provisioning/dashboards/json:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - fraud_shield_net
+
+volumes:
+  pgdata:
+  grafana_data:
+
+networks:
+  fraud_shield_net:
+    driver: bridge

@@ -1,0 +1,11 @@
+{
+  "name": "fraud-shield-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npm run build --prefix frontend",
+    "dev": "npm run dev --prefix frontend",
+    "preview": "npm run preview --prefix frontend",
+    "test:backend": "python -m pytest -v"
+  }
+}

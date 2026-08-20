@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: fraud-shield-backend
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt && python ml/training/train_xgb.py
+    startCommand: uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fraud-shield-postgres
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PRIVACY_HASH_SALT
+        generateValue: true
+      - key: MODEL_PATH
+        value: ml/models/xgboost_fraud_model.joblib
+
+databases:
+  - name: fraud-shield-postgres
+    region: singapore
+    plan: free
+    databaseName: fraud_shield_db
+    user: fraud_user

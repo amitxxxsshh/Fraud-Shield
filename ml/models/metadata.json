@@ -1,0 +1,57 @@
+{
+  "model_version": "v1.0-xgb-upi",
+  "algorithm": "XGBoost Classifier",
+  "trained_at": "2026-08-20T11:19:16.384257+00:00",
+  "num_features": 15,
+  "feature_names": [
+    "amount",
+    "amount_to_average_ratio",
+    "new_recipient",
+    "recipient_transaction_count",
+    "transaction_velocity",
+    "hour_of_day",
+    "day_of_week",
+    "historical_average",
+    "historical_std",
+    "recent_suspicious_call",
+    "recent_suspicious_message",
+    "device_changed",
+    "location_anomaly",
+    "voice_risk",
+    "message_risk"
+  ],
+  "metrics": {
+    "accuracy": 0.9863,
+    "precision": 0.964,
+    "recall": 0.9896,
+    "f1_score": 0.9766,
+    "roc_auc": 0.9992,
+    "confusion_matrix": [
+      [
+        2103,
+        32
+      ],
+      [
+        9,
+        856
+      ]
+    ]
+  },
+  "feature_importance": {
+    "recipient_transaction_count": 0.42381662130355835,
+    "amount_to_average_ratio": 0.40490129590034485,
+    "transaction_velocity": 0.0935080423951149,
+    "message_risk": 0.01576879434287548,
+    "amount": 0.013594117015600204,
+    "voice_risk": 0.013146305456757545,
+    "historical_average": 0.005127680487930775,
+    "recent_suspicious_message": 0.004927400965243578,
+    "hour_of_day": 0.004778654780238867,
+    "recent_suspicious_call": 0.0044710468500852585,
+    "historical_std": 0.003957273438572884,
+    "device_changed": 0.003598511451855302,
+    "new_recipient": 0.002962505677714944,
+    "day_of_week": 0.0028339189011603594,
+    "location_anomaly": 0.0026078480295836926
+  }
+}
